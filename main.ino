@@ -1,11 +1,15 @@
 //Motor pins
-#define LEFT_DIRECTION 13
-#define LEFT_PWM 11
-#define LEFT_BRAKE 8
+const int LEFT_DIRECTION = 13
+const int LEFT_PWM = 11
+const int LEFT_BRAKE = 8
 
-#define RIGHT_DIRECTION 12
-#define RIGHT_PWM 3
-#define RIGHT_BRAKE 9
+const int RIGHT_DIRECTION = 12
+const int RIGHT_PWM = 3
+const int RIGHT_BRAKE = 9
+
+const int PING_PIN = 1
+
+#define SPEED 35
 
 //Lijn sensor pins.
 const int LINE_SENSOR_PINS[5] = {
@@ -117,6 +121,25 @@ void setup_line_sensor(){
 * Hierbij worden de waardes van iedere sensor samengevoegd in een uint8_t
 */
 
+//Helper function omdat arduino geen pulse out heeft.
+void pulseOut(int pin, unsigned long duration){
+	digitalWrite(pin, LOW); //We zetten de pin op low voor de zekerheid.
+	delayMicroseconds(2); 
+	digitalWrite(pin, HIGH);
+	delayMicroseconds(duration);
+	digitalWrite(pin, LOW);
+}
+
+//Code is op basis van de basic 2 stamp voorbeeld in de datasheet voor ping sensor ( PING))) tm Ultrasonic Distance Sensor #28015)
+uint32_t getPing(){
+	pulseOut(PING_PIN, 10);
+	uint32_t duration = pulseIn(PING_PIN, HIGH);
+	return Math.pow(2260, duration); //de waarde 2260 is de cm constant uit de basic stamp 2 voorbeeld (zie brightspace voor datasheet).
+
+
+
+}
+
 uint8_t read_line_sensor(){
 	uint8_t result = 0;
 	for(int i = 0; i < 5; i++){
@@ -140,17 +163,16 @@ void setup(){
 void loop(){
 	uint8_t line_data = read_line_sensors();
 
-	if(in_array(VALUES_FORWARD, line_data, 4)){
+	if(line_data == FINISH_VALUE){
+		finish();
+
+	}else if(in_array(VALUES_FORWARD, line_data, 4)){
 		forward();
 	}else if(in_array(VALUES_TURN_RIGHT, line_data, 10)){
 		right();
 
 	}else if(in_array(VALUES_TURN_LEFT, line_data, 11)){
 		left();
-
-	}else if(line_data == FINISH_VALUE){
-		finish();
-
 
 	}else if(in_array(VALUES_UTURN, line_data, 5)){
 		uturn();
@@ -159,22 +181,43 @@ void loop(){
 		uturn();
 	}
 
+	uint32_t ping_distance = getPing();
+
+	if(ping_distance > 0 && ping_distance <= 10){
+		uturn();
+
+	}
+
 
 }
 
 void forward(){
+	digitalWrite(LEFT_DIRECTION, HIGH);
+	analogWrite(LEFT_DIRECTION, SPEED);
+	digitalWrite(RIGHT_DIRECTION, LOW);
+	analogWrite(RIGHT_SPEED, SPEED);
 
 }
 
 void left(){
+	digitalWrite(RIGHT_DIRECTION, LOW);
+	analogWrite(LEFT_SPEED, 0);
+	analogWrite(RIGHT_SPEED, SPEED);
 
 }
 
 void right(){
+	digitalWrite(LEFT_DIRECTION, LOW);
+	analogWrite(LEFT_SPEED, SPEED);
+	analogWrite(RIGHT_SPEED, 0);
 
 }
 
 void uturn(){
+	digitalWrite(LEFT_DIRECTION, LOW);
+	analogWrite(LEFT_DIRECTION, SPEED);
+	digitalWrite(RIGHT_DIRECTION, LOW);
+	analogWrite(RIGHT_SPEED, SPEED);
 }
 
 void finish(){
