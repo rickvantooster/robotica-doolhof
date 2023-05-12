@@ -1,15 +1,21 @@
 //Motor pins
-const int LEFT_DIRECTION = 13
-const int LEFT_PWM = 11
-const int LEFT_BRAKE = 8
+const int LEFT_DIRECTION = 13;
+const int LEFT_PWM = 11;
+const int LEFT_BRAKE = 8;
 
-const int RIGHT_DIRECTION = 12
-const int RIGHT_PWM = 3
-const int RIGHT_BRAKE = 9
-
-const int PING_PIN = 1
+const int RIGHT_DIRECTION = 12;
+const int RIGHT_PWM = 3;
+const int RIGHT_BRAKE = 9;
 
 #define SPEED 35
+
+//ping sensor setup
+const int PING_PIN_TRIGGER = 0;
+const int PING_PIN_ECHO = 1;
+const int PING_MAX_DIST = 20; //maximale afstand in centimeters
+
+NewPing sonar(PING_PIN_TRIGGER, PING_PIN_ECHO, PING_MAX_DIST);
+
 
 //Lijn sensor pins.
 const int LINE_SENSOR_PINS[5] = {
@@ -20,6 +26,10 @@ const int LINE_SENSOR_PINS[5] = {
 	A4,
 
 };
+
+//extra const ints om motor richting te verduidelijken
+const int MOTOR_COUNTER_CLOCKWISE = HIGH;
+const int MOTOR_CLOCKWISE = LOW;
 
 /*
 BEGIN WAARDES -> ACTIE  
@@ -181,9 +191,9 @@ void loop(){
 		uturn();
 	}
 
-	uint32_t ping_distance = getPing();
+	uint32_t ping_distance = sonar.ping_cm();
 
-	if(ping_distance > 0 && ping_distance <= 10){
+	if(ping_distance <= 10){
 		uturn();
 
 	}
@@ -192,34 +202,49 @@ void loop(){
 }
 
 void forward(){
-	digitalWrite(LEFT_DIRECTION, HIGH);
+	digitalWrite(LEFT_DIRECTION, MOTOR_COUNTER_CLOCKWISE);
 	analogWrite(LEFT_DIRECTION, SPEED);
-	digitalWrite(RIGHT_DIRECTION, LOW);
+	digitalWrite(RIGHT_DIRECTION, MOTOR_CLOCKWISE);
 	analogWrite(RIGHT_SPEED, SPEED);
 
 }
 
 void left(){
-	digitalWrite(RIGHT_DIRECTION, LOW);
+	digitalWrite(RIGHT_DIRECTION, MOTOR_CLOCKWISE);
 	analogWrite(LEFT_SPEED, 0);
 	analogWrite(RIGHT_SPEED, SPEED);
 
 }
 
 void right(){
-	digitalWrite(LEFT_DIRECTION, LOW);
+	digitalWrite(LEFT_DIRECTION, MOTOR_CLOCKWISE);
 	analogWrite(LEFT_SPEED, SPEED);
 	analogWrite(RIGHT_SPEED, 0);
 
 }
 
 void uturn(){
-	digitalWrite(LEFT_DIRECTION, LOW);
+	digitalWrite(LEFT_DIRECTION, MOTOR_CLOCKWISE);
 	analogWrite(LEFT_DIRECTION, SPEED);
-	digitalWrite(RIGHT_DIRECTION, LOW);
+	digitalWrite(RIGHT_DIRECTION, MOTOR_CLOCKWISE);
 	analogWrite(RIGHT_SPEED, SPEED);
 }
 
+void stop(){
+	digitalWrite(LEFT_DIRECTION, MOTOR_COUNTER_CLOCKWISE);
+	analogWrite(LEFT_DIRECTION, 0);
+	digitalWrite(RIGHT_DIRECTION, MOTOR_CLOCKWISE);
+	analogWrite(RIGHT_SPEED, 0);
+}
+
 void finish(){
+	forward();
+	uint8_t line_data = read_line_sensors();
+	if(line_data != FINISH_VALUE){
+		return;
+
+	}
+
+	//Einde doolhof
 
 }
